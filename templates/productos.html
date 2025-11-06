@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Productos</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .card-soft { border: 0; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,.06); }
+    .gradient-header { background: linear-gradient(135deg, #0d6efd, #6ea8fe); }
+    .btn-pill { border-radius: 999px; }
+    .modal-content { border: 0; border-radius: 18px; box-shadow: 0 20px 40px rgba(0,0,0,.15); }
+    .modal-header { border-bottom: 0; }
+    .modal-footer { border-top: 0; }
+    .shake { animation: shake .2s linear 2; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
+    th.sticky { position: sticky; top: 0; background: #e7f1ff; z-index: 1; }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+      <a class="navbar-brand" href="/">Inventario UNISON</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div id="nav" class="collapse navbar-collapse">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link active" href="/productos">Productos</a></li>
+          <li class="nav-item"><a class="nav-link" href="/almacenes">Almacenes</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container py-4">
+    <div class="card card-soft p-3 p-md-4 mb-4">
+      <div class="d-flex flex-wrap justify-content-center gap-2">
+        <button id="btnAgregar" class="btn btn-success btn-pill px-4" data-bs-toggle="modal" data-bs-target="#modalForm">
+          ➕ Agregar
+        </button>
+        <button id="btnModificar" class="btn btn-warning btn-pill px-4">
+          ✏️ Modificar
+        </button>
+        <button id="btnEliminar" class="btn btn-danger btn-pill px-4">
+          🗑️ Eliminar
+        </button>
+      </div>
+      <div id="selectionAlert" class="alert alert-warning mt-3 d-none mb-0">
+        Selecciona <strong>una</strong> fila para Modificar, o <strong>una o más</strong> filas para Eliminar.
+      </div>
+    </div>
+
+    <h2 class="mb-3">Listado de Productos</h2>
+
+    {% if error %}
+      <div class="alert alert-warning">{{ error }}</div>
+    {% else %}
+      {% if headers and rows %}
+        <div class="card card-soft">
+          <div class="table-responsive p-3">
+            <table id="tabla" class="table table-hover align-middle">
+              <thead class="table-primary">
+                <tr>
+                  <th class="sticky" style="width:42px;">
+                    <input id="checkAll" class="form-check-input" type="checkbox" />
+                  </th>
+                  {% for h in headers %}<th class="sticky">{{ h }}</th>{% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in rows %}
+                  <tr>
+                    <td><input class="form-check-input row-check" type="checkbox" /></td>
+                    {% for cell in r %}<td>{{ cell }}</td>{% endfor %}
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {% else %}
+        <div class="alert alert-info">No hay registros para mostrar.</div>
+      {% endif %}
+    {% endif %}
+  </main>
+
+  <!-- Modal de formulario (UI, sin envío) -->
+  <div class="modal fade" id="modalForm" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header gradient-header text-white">
+          <div class="d-flex align-items-center gap-2">
+            <span class="fs-4">📦</span>
+            <h5 class="modal-title m-0">Formulario de Producto</h5>
+          </div>
+          <button class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+
+        <div class="modal-body">
+          <!-- alerta interna para errores de validación -->
+          <div id="formAlert" class="alert alert-danger d-none" role="alert">
+            Por favor, completa los campos requeridos.
+          </div>
+
+          <form id="formProducto" novalidate>
+            <div class="row g-3">
+              {% for c in columns %}
+                {% if not c.hidden %}
+                  <div class="col-md-6">
+                    <label class="form-label">{{ c.name }}</label>
+
+                    {% if c.html_type == 'number-int' %}
+                      <input class="form-control" type="number" step="1"
+                             name="{{ c.name }}" {% if c.notnull and not c.default %}required{% endif %}>
+                    {% elif c.html_type == 'number-float' %}
+                      <input class="form-control" type="number" step="any"
+                             name="{{ c.name }}" {% if c.notnull and not c.default %}required{% endif %}>
+                    {% elif c.html_type == 'date' %}
+                      <input class="form-control" type="date"
+                             name="{{ c.name }}" {% if c.notnull and not c.default %}required{% endif %}>
+                    {% elif c.html_type == 'datetime' %}
+                      <input class="form-control" type="datetime-local"
+                             name="{{ c.name }}" {% if c.notnull and not c.default %}required{% endif %}>
+                    {% else %}
+                      <input class="form-control" type="text"
+                             name="{{ c.name }}" {% if c.notnull and not c.default %}required{% endif %}>
+                    {% endif %}
+
+                    <div class="invalid-feedback">Este campo es obligatorio.</div>
+                    {% if c.default %}
+                      <div class="form-text">Valor por defecto: {{ c.default }}</div>
+                    {% endif %}
+                  </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline-secondary btn-pill" data-bs-dismiss="modal">Cancelar</button>
+          <button id="btnConfirmar" class="btn btn-primary btn-pill">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: confirmación de eliminación -->
+  <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0">
+        <div class="modal-header gradient-header text-white">
+          <h5 class="modal-title">Confirmar eliminación</h5>
+          <button class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-2">¿Seguro que deseas eliminar los siguientes registros?</p>
+          <ul id="deleteList" class="mb-0"></ul>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline-secondary btn-pill" data-bs-dismiss="modal">Cancelar</button>
+          <button id="btnConfirmDelete" class="btn btn-danger btn-pill">Eliminar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Segundo modal: bloqueo de inserción/modificación/eliminación -->
+  <div class="modal fade" id="blockedModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0">
+        <div class="modal-header gradient-header text-white">
+          <h5 class="modal-title">Acción no permitida</h5>
+          <button class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="d-flex align-items-start gap-3">
+            <div class="fs-2">⚠️</div>
+            <div>
+              <p id="blockedText" class="mb-1">Aún no deberían poder insertar/modificar/eliminar registros.</p>
+              <small class="text-muted">Esta interfaz está en modo demostración.</small>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary btn-pill" data-bs-dismiss="modal">Entendido</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    (function () {
+      const headers = {{ headers|tojson|safe }};
+      const btnAgregar = document.getElementById('btnAgregar');
+      const btnModificar = document.getElementById('btnModificar');
+      const btnEliminar = document.getElementById('btnEliminar');
+      const selectionAlert = document.getElementById('selectionAlert');
+
+      const table = document.getElementById('tabla');
+      const checkAll = document.getElementById('checkAll');
+
+      const form = document.getElementById('formProducto');
+      const btnConfirmar = document.getElementById('btnConfirmar');
+      const formAlert = document.getElementById('formAlert');
+
+      const confirmDeleteModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+      const deleteList = document.getElementById('deleteList');
+      const btnConfirmDelete = document.getElementById('btnConfirmDelete');
+
+      const blockedModalEl = document.getElementById('blockedModal');
+      const blockedModal = new bootstrap.Modal(blockedModalEl);
+      const blockedText = document.getElementById('blockedText');
+
+      const mainModalEl = document.getElementById('modalForm');
+
+      // Utilidades de selección
+      function getCheckedRows() {
+        return Array.from(table.querySelectorAll('tbody tr')).filter(tr => {
+          const cb = tr.querySelector('.row-check');
+          return cb && cb.checked;
+        });
+      }
+      function getRowData(tr) {
+        const cells = Array.from(tr.querySelectorAll('td')).slice(1); // saltar la casilla
+        return cells.map(td => td.textContent.trim());
+      }
+      function showSelectionHint() {
+        selectionAlert.classList.remove('d-none');
+        selectionAlert.classList.add('shake');
+        setTimeout(() => selectionAlert.classList.remove('shake'), 400);
+      }
+
+      // Seleccionar todo
+      if (checkAll) {
+        checkAll.addEventListener('change', () => {
+          table.querySelectorAll('.row-check').forEach(cb => { cb.checked = checkAll.checked; });
+        });
+      }
+
+      // Abrir Agregar: limpiar formulario
+      btnAgregar.addEventListener('click', () => {
+        form.reset();
+        form.classList.remove('was-validated');
+        formAlert.classList.add('d-none');
+      });
+
+      // Abrir Modificar: requiere 1 seleccionado; prellenar
+      btnModificar.addEventListener('click', () => {
+        const rows = getCheckedRows();
+        if (rows.length !== 1) { showSelectionHint(); return; }
+
+        // Prellenar
+        const values = getRowData(rows[0]); // alineado con headers
+        form.reset();
+        form.classList.remove('was-validated');
+        formAlert.classList.add('d-none');
+
+        // mapear por nombre de columna (headers) -> input[name=col]
+        headers.forEach((h, i) => {
+          const input = form.querySelector(`[name="${h}"]`);
+          if (!input) return;
+          const v = values[i] ?? '';
+          if (input.type === 'datetime-local') {
+            // intento básico de normalización a YYYY-MM-DDTHH:mm
+            const iso = v.replace(' ', 'T').slice(0,16);
+            input.value = iso;
+          } else if (input.type === 'number') {
+            input.value = v.replace(',', '.');
+          } else {
+            input.value = v;
+          }
+        });
+
+        // Mostrar modal de formulario
+        const formModal = new bootstrap.Modal(mainModalEl);
+        formModal.show();
+      });
+
+      // Eliminar: requiere ≥1 seleccionado; abrir confirmación
+      btnEliminar.addEventListener('click', () => {
+        const rows = getCheckedRows();
+        if (rows.length < 1) { showSelectionHint(); return; }
+
+        // Llenar lista de confirmación (muestra primeras 2 columnas útiles si existen)
+        deleteList.innerHTML = '';
+        rows.forEach(tr => {
+          const data = getRowData(tr);
+          const resumen = data.slice(0, Math.min(2, data.length)).join(' — ');
+          const li = document.createElement('li');
+          li.textContent = resumen || '(registro)';
+          deleteList.appendChild(li);
+        });
+        confirmDeleteModal.show();
+      });
+
+      // Confirmar eliminación => bloquear (no elimina realmente)
+      btnConfirmDelete.addEventListener('click', () => {
+        confirmDeleteModal.hide();
+        blockedText.textContent = 'Aún no deberían poder eliminar registros.';
+        blockedModal.show();
+      });
+
+      // Confirmar en el formulario => validar y bloquear (no inserta / no modifica)
+      btnConfirmar.addEventListener('click', (e) => {
+        e.preventDefault();
+        formAlert.classList.add('d-none');
+        form.classList.remove('shake');
+
+        if (!form.checkValidity()) {
+          formAlert.classList.remove('d-none');
+          form.classList.add('was-validated', 'shake');
+          return;
+        }
+
+        // Decidir el mensaje según si veníamos de Modificar (1 seleccionado) o Agregar (0 seleccionados)
+        const rows = getCheckedRows();
+        const modalInstance = bootstrap.Modal.getInstance(mainModalEl);
+        if (modalInstance) modalInstance.hide();
+        blockedText.textContent = rows.length === 1
+          ? 'Aún no deberían poder modificar registros.'
+          : 'Aún no deberían poder insertar registros.';
+        blockedModal.show();
+      });
+
+      // feedback instantáneo para requeridos
+      form.querySelectorAll('input[required]').forEach(inp => {
+        inp.addEventListener('blur', () => {
+          if (!inp.value.trim()) inp.classList.add('is-invalid');
+          else inp.classList.remove('is-invalid');
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
