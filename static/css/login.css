@@ -1,0 +1,56 @@
+:root {
+  --unison-azul: #00529e;
+  --unison-azul-oscuro: #015294;
+  --unison-dorado: #f8bb00;
+  --unison-dorado-oscuro: #d99e30;
+}
+
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: radial-gradient(circle at top, var(--unison-azul) 0, var(--unison-azul-oscuro) 40%, #0b1726 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-login {
+  border-radius: 18px;
+  border: 0;
+  box-shadow: 0 18px 40px rgba(0,0,0,.45);
+  max-width: 400px;
+  width: 100%;
+  background-color: #f9fafc;
+}
+
+.logo-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--unison-dorado);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--unison-azul-oscuro);
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.btn-unison {
+  background-color: var(--unison-azul);
+  border-color: var(--unison-azul);
+  border-radius: 4px;
+}
+
+.btn-unison:hover {
+  background-color: var(--unison-azul-oscuro);
+  border-color: var(--unison-azul-oscuro);
+}
+
+.btn {
+  border-radius: 4px;
+}
+
+.form-control {
+  border-radius: 4px;
+}

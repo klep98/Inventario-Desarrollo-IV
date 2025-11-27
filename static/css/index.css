@@ -1,0 +1,41 @@
+:root {
+  --unison-azul: #00529e;
+  --unison-azul-oscuro: #015294;
+  --unison-dorado: #f8bb00;
+  --unison-dorado-oscuro: #d99e30;
+}
+
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: #f5f7fb;
+}
+
+.navbar-unison {
+  background-color: var(--unison-azul);
+}
+
+.hero-card {
+  border-radius: 18px;
+  border: 0;
+  box-shadow: 0 14px 35px rgba(0,0,0,.10);
+  background-color: #ffffff;
+}
+
+.btn {
+  border-radius: 4px;
+}
+
+.btn-outline-primary {
+  color: var(--unison-azul);
+  border-color: var(--unison-azul);
+}
+
+.btn-outline-primary:hover {
+  color: #fff;
+  background-color: var(--unison-azul);
+  border-color: var(--unison-azul);
+}
+
+.btn-outline-secondary {
+  border-radius: 4px;
+}

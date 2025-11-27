@@ -4,54 +4,88 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Almacenes</title>
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    .card-soft { border: 0; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,.06); }
-    .gradient-header { background: linear-gradient(135deg, #0d6efd, #6ea8fe); }
-    .btn-pill { border-radius: 999px; }
-    .modal-content { border: 0; border-radius: 18px; box-shadow: 0 20px 40px rgba(0,0,0,.15); }
-    .modal-header { border-bottom: 0; }
-    .modal-footer { border-top: 0; }
-    .shake { animation: shake .2s linear 2; }
-    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(4px)} }
-    th.sticky { position: sticky; top: 0; background: #e7f1ff; z-index: 1; }
-  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/almacenes.css') }}">
 </head>
 <body>
 
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <nav class="navbar navbar-expand-lg navbar-dark navbar-unison">
     <div class="container">
-      <a class="navbar-brand" href="/">Inventario UNISON</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+      <a class="navbar-brand fw-semibold" href="{{ url_for('inicio') }}">Inventario UNISON</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
         <span class="navbar-toggler-icon"></span>
       </button>
-      <div id="nav" class="collapse navbar-collapse">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="/productos">Productos</a></li>
-          <li class="nav-item"><a class="nav-link active" href="/almacenes">Almacenes</a></li>
+      <div id="navMain" class="collapse navbar-collapse">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('vista_productos') }}">Productos</a></li>
+          <li class="nav-item"><a class="nav-link active" href="{{ url_for('vista_almacenes') }}">Almacenes</a></li>
         </ul>
+        <span class="navbar-text me-3">{{ usuario }} ({{ rol }})</span>
+        <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline-light" style="border-radius:4px;">Cerrar sesión</a>
       </div>
     </div>
   </nav>
 
   <main class="container py-4">
-    <div class="card card-soft p-3 p-md-4 mb-4">
-      <div class="d-flex flex-wrap justify-content-center gap-2">
-        <button id="btnAgregar" class="btn btn-success btn-pill px-4" data-bs-toggle="modal" data-bs-target="#modalForm">
-          ➕ Agregar
-        </button>
-        <button id="btnModificar" class="btn btn-warning btn-pill px-4">
-          ✏️ Modificar
-        </button>
-        <button id="btnEliminar" class="btn btn-danger btn-pill px-4">
-          🗑️ Eliminar
-        </button>
+
+    {% if headers and rows %}
+      <!-- Filtros de búsqueda -->
+      <div class="card card-soft p-3 p-md-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0 filter-title">Filtros de búsqueda</h5>
+          <button class="btn btn-sm btn-outline-secondary" id="btnLimpiarFiltros">Limpiar filtros</button>
+        </div>
+        <div class="row g-3">
+          {% for c in columns %}
+            <div class="col-md-4 col-lg-3">
+              <label class="form-label small">
+                {{ c.name|replace('_',' ')|capitalize }}
+              </label>
+
+              {% if c.html_type in ['number-int','number-float'] %}
+                <div class="d-flex gap-2">
+                  <input type="number" class="form-control form-control-sm"
+                         placeholder="Mín" id="filter_{{ c.name }}_min">
+                  <input type="number" class="form-control form-control-sm"
+                         placeholder="Máx" id="filter_{{ c.name }}_max">
+                </div>
+              {% else %}
+                <input type="text" class="form-control form-control-sm"
+                       placeholder="Buscar..." id="filter_{{ c.name }}">
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+        <small class="text-muted d-block mt-2">
+          Para columnas numéricas se pueden usar rangos (mínimo y máximo).
+        </small>
       </div>
-      <div id="selectionAlert" class="alert alert-warning mt-3 d-none mb-0">
-        Selecciona <strong>una</strong> fila para Modificar, o <strong>una o más</strong> filas para Eliminar.
+    {% endif %}
+
+    {% if puede_editar %}
+      <div class="card card-soft p-3 p-md-4 mb-4">
+        <div class="d-flex flex-wrap justify-content-center gap-2">
+          <button id="btnAgregar" class="btn btn-success btn-pill px-4" data-bs-toggle="modal" data-bs-target="#modalForm">
+            ➕ Agregar
+          </button>
+          <button id="btnModificar" class="btn btn-warning btn-pill px-4">
+            ✏️ Modificar
+          </button>
+          <button id="btnEliminar" class="btn btn-danger btn-pill px-4">
+            🗑️ Eliminar
+          </button>
+        </div>
+        <div id="selectionAlert" class="alert alert-warning mt-3 d-none mb-0">
+          Selecciona <strong>una</strong> fila para Modificar, o <strong>una o más</strong> filas para Eliminar.
+        </div>
       </div>
-    </div>
+    {% else %}
+      <div class="alert alert-info">
+        Tu rol (<strong>{{ rol }}</strong>) solo puede consultar los almacenes.  
+        Para agregar, modificar o eliminar se requiere rol <strong>ADMIN</strong> o <strong>ALMACENES</strong>.
+      </div>
+    {% endif %}
 
     <h2 class="mb-3">Listado de Almacenes</h2>
 
@@ -61,19 +95,28 @@
       {% if headers and rows %}
         <div class="card card-soft">
           <div class="table-responsive p-3">
-            <table id="tabla" class="table table-hover align-middle">
+            <table id="tabla"
+                   class="table table-hover align-middle"
+                   data-headers='{{ headers|tojson|safe }}'
+                   data-numeric-columns='{{ columns
+                     |selectattr("html_type","in",["number-int","number-float"])
+                     |map(attribute="name")|list|tojson|safe }}'>
               <thead class="table-primary">
                 <tr>
-                  <th class="sticky" style="width:42px;">
-                    <input id="checkAll" class="form-check-input" type="checkbox" />
-                  </th>
+                  {% if puede_editar %}
+                    <th class="sticky" style="width:42px;">
+                      <input id="checkAll" class="form-check-input" type="checkbox" />
+                    </th>
+                  {% endif %}
                   {% for h in headers %}<th class="sticky">{{ h }}</th>{% endfor %}
                 </tr>
               </thead>
               <tbody>
                 {% for r in rows %}
                   <tr>
-                    <td><input class="form-check-input row-check" type="checkbox" /></td>
+                    {% if puede_editar %}
+                      <td><input class="form-check-input row-check" type="checkbox" /></td>
+                    {% endif %}
                     {% for cell in r %}<td>{{ cell }}</td>{% endfor %}
                   </tr>
                 {% endfor %}
@@ -87,7 +130,8 @@
     {% endif %}
   </main>
 
-  <!-- Modal de formulario (UI, sin envío) -->
+  {% if puede_editar %}
+  <!-- Modal de formulario -->
   <div class="modal fade" id="modalForm" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
@@ -109,7 +153,9 @@
               {% for c in columns %}
                 {% if not c.hidden %}
                   <div class="col-md-6">
-                    <label class="form-label">{{ c.name }}</label>
+                    <label class="form-label">
+                      {{ c.name|replace('_',' ')|capitalize }}
+                    </label>
 
                     {% if c.html_type == 'number-int' %}
                       <input class="form-control" type="number" step="1"
@@ -146,7 +192,7 @@
     </div>
   </div>
 
-  <!-- Modal: confirmación de eliminación -->
+  <!-- Modal confirmación eliminación -->
   <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content border-0">
@@ -166,159 +212,20 @@
     </div>
   </div>
 
-  <!-- Segundo modal: bloqueo de inserción/modificación/eliminación -->
-  <div class="modal fade" id="blockedModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content border-0">
-        <div class="modal-header gradient-header text-white">
-          <h5 class="modal-title">Acción no permitida</h5>
-          <button class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body">
-          <div class="d-flex align-items-start gap-3">
-            <div class="fs-2">⚠️</div>
-            <div>
-              <p id="blockedText" class="mb-1">Aún no deberían poder insertar/modificar/eliminar registros.</p>
-              <small class="text-muted">Esta interfaz está en modo demostración.</small>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-primary btn-pill" data-bs-dismiss="modal">Entendido</button>
-        </div>
+  <!-- Contenedor Toast -->
+  <div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="liveToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div id="toastBody" class="toast-body"></div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
       </div>
     </div>
   </div>
+  {% endif %}
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    (function () {
-      const headers = {{ headers|tojson|safe }};
-      const btnAgregar = document.getElementById('btnAgregar');
-      const btnModificar = document.getElementById('btnModificar');
-      const btnEliminar  = document.getElementById('btnEliminar');
-      const selectionAlert = document.getElementById('selectionAlert');
-
-      const table = document.getElementById('tabla');
-      const checkAll = document.getElementById('checkAll');
-
-      const form = document.getElementById('formAlmacen');
-      const btnConfirmar = document.getElementById('btnConfirmar');
-      const formAlert = document.getElementById('formAlert');
-
-      const confirmDeleteModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
-      const deleteList = document.getElementById('deleteList');
-      const btnConfirmDelete = document.getElementById('btnConfirmDelete');
-
-      const blockedModalEl = document.getElementById('blockedModal');
-      const blockedModal = new bootstrap.Modal(blockedModalEl);
-      const blockedText = document.getElementById('blockedText');
-
-      const mainModalEl = document.getElementById('modalForm');
-
-      function getCheckedRows() {
-        return Array.from(table.querySelectorAll('tbody tr')).filter(tr => {
-          const cb = tr.querySelector('.row-check');
-          return cb && cb.checked;
-        });
-      }
-      function getRowData(tr) {
-        const cells = Array.from(tr.querySelectorAll('td')).slice(1);
-        return cells.map(td => td.textContent.trim());
-      }
-      function showSelectionHint() {
-        selectionAlert.classList.remove('d-none');
-        selectionAlert.classList.add('shake');
-        setTimeout(() => selectionAlert.classList.remove('shake'), 400);
-      }
-
-      if (checkAll) {
-        checkAll.addEventListener('change', () => {
-          table.querySelectorAll('.row-check').forEach(cb => { cb.checked = checkAll.checked; });
-        });
-      }
-
-      btnAgregar.addEventListener('click', () => {
-        form.reset();
-        form.classList.remove('was-validated');
-        formAlert.classList.add('d-none');
-      });
-
-      btnModificar.addEventListener('click', () => {
-        const rows = getCheckedRows();
-        if (rows.length !== 1) { showSelectionHint(); return; }
-
-        const values = getRowData(rows[0]);
-        form.reset();
-        form.classList.remove('was-validated');
-        formAlert.classList.add('d-none');
-
-        headers.forEach((h, i) => {
-          const input = form.querySelector(`[name="${h}"]`);
-          if (!input) return;
-          const v = values[i] ?? '';
-          if (input.type === 'datetime-local') {
-            const iso = v.replace(' ', 'T').slice(0,16);
-            input.value = iso;
-          } else if (input.type === 'number') {
-            input.value = v.replace(',', '.');
-          } else {
-            input.value = v;
-          }
-        });
-
-        const formModal = new bootstrap.Modal(mainModalEl);
-        formModal.show();
-      });
-
-      btnEliminar.addEventListener('click', () => {
-        const rows = getCheckedRows();
-        if (rows.length < 1) { showSelectionHint(); return; }
-
-        deleteList.innerHTML = '';
-        rows.forEach(tr => {
-          const data = getRowData(tr);
-          const resumen = data.slice(0, Math.min(2, data.length)).join(' — ');
-          const li = document.createElement('li');
-          li.textContent = resumen || '(registro)';
-          deleteList.appendChild(li);
-        });
-        confirmDeleteModal.show();
-      });
-
-      btnConfirmDelete.addEventListener('click', () => {
-        confirmDeleteModal.hide();
-        blockedText.textContent = 'Aún no deberían poder eliminar registros.';
-        blockedModal.show();
-      });
-
-      btnConfirmar.addEventListener('click', (e) => {
-        e.preventDefault();
-        formAlert.classList.add('d-none');
-        form.classList.remove('shake');
-
-        if (!form.checkValidity()) {
-          formAlert.classList.remove('d-none');
-          form.classList.add('was-validated', 'shake');
-          return;
-        }
-
-        const rows = getCheckedRows();
-        const modalInstance = bootstrap.Modal.getInstance(mainModalEl);
-        if (modalInstance) modalInstance.hide();
-        blockedText.textContent = rows.length === 1
-          ? 'Aún no deberían poder modificar registros.'
-          : 'Aún no deberían poder insertar registros.';
-        blockedModal.show();
-      });
-
-      form.querySelectorAll('input[required]').forEach(inp => {
-        inp.addEventListener('blur', () => {
-          if (!inp.value.trim()) inp.classList.add('is-invalid');
-          else inp.classList.remove('is-invalid');
-        });
-      });
-    })();
-  </script>
+  {% if puede_editar %}
+    <script src="{{ url_for('static', filename='js/almacenes.js') }}"></script>
+  {% endif %}
 </body>
 </html>
