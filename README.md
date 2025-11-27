@@ -1,4 +1,4 @@
-istema de Inventario UNISON — Flask + SQLite
+Sistema de Inventario UNISON — Flask + SQLite
 
 Proyecto Final de la materia de Desarrollo de Sistemas IV
 Universidad de Sonora — Departamento de Ingeniería Industrial
